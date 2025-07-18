@@ -434,6 +434,55 @@ $current_total_pending_all_time = getCurrentTotalPendingOrders($all_site_orders_
             margin: 0;
             line-height: 1.1;
         }
+
+        #category-form {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+            align-items: center;
+        }
+
+        #category-form input {
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            flex-grow: 1;
+        }
+
+        #category-form button {
+            padding: 10px 20px;
+            border-radius: 5px;
+            border: none;
+            background-color: var(--primary-color);
+            color: white;
+            cursor: pointer;
+        }
+
+        #category-form button:hover {
+            background-color: var(--primary-color-darker);
+        }
+
+        #product-form {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        #product-form input, #product-form textarea, #product-form select {
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+        }
+
+        #product-form button {
+            padding: 10px 20px;
+            border-radius: 5px;
+            border: none;
+            background-color: var(--primary-color);
+            color: white;
+            cursor: pointer;
+        }
         .stat-card#stat_total_revenue_card p {
             color: var(--primary-color); 
         }
@@ -514,6 +563,31 @@ $current_total_pending_all_time = getCurrentTotalPendingOrders($all_site_orders_
                         <div class="stat-card" id="stat_total_revenue_card"><h4>Total Revenue</h4><p id="stat_total_revenue">৳0.00</p></div>
                     </div>
                 </div>
+
+                <div class="content-card">
+                    <h2 class="card-title">Add New Category</h2>
+                    <form id="category-form">
+                        <input type="text" id="category-name" placeholder="Category Name" required>
+                        <input type="text" id="category-icon" placeholder="Font Awesome Icon (e.g., fas fa-book)" required>
+                        <input type="text" id="category-subtitle" placeholder="Subtitle" required>
+                        <button type_submit>Add Category</button>
+                    </form>
+                </div>
+
+                <div class="content-card">
+                    <h2 class="card-title">Edit Product</h2>
+                    <form id="product-form">
+                        <select id="product-select" required>
+                            <option value="">Select a product to edit</option>
+                        </select>
+                        <input type="text" id="product-name" placeholder="Product Name" required>
+                        <textarea id="product-description" placeholder="Product Description" required></textarea>
+                        <input type="number" id="product-price" placeholder="Product Price" required>
+                        <input type="text" id="product-image" placeholder="Product Image URL" required>
+                        <button type="submit">Update Product</button>
+                    </form>
+                </div>
+
                 <div class="content-card">
                     <h2 class="card-title">Manage Orders</h2>
                     <?php if ($json_load_error): ?>
@@ -665,6 +739,92 @@ $current_total_pending_all_time = getCurrentTotalPendingOrders($all_site_orders_
                      }
                  });
             }
+
+            document.getElementById('category-form').addEventListener('submit', function(e) {
+                e.preventDefault();
+                const categoryName = document.getElementById('category-name').value;
+                const categoryIcon = document.getElementById('category-icon').value;
+                const categorySubtitle = document.getElementById('category-subtitle').value;
+
+                const newCategory = {
+                    name: categoryName,
+                    icon: categoryIcon,
+                    subtitle: categorySubtitle
+                };
+
+                fetch('add_category.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(newCategory)
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('Category added successfully!');
+                        document.getElementById('category-form').reset();
+                    } else {
+                        alert('Failed to add category.');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('An error occurred while adding the category.');
+                });
+            });
+
+            // Fetch products for the dropdown
+            fetch('get_products.php')
+                .then(response => response.json())
+                .then(products => {
+                    const productSelect = document.getElementById('product-select');
+                    products.forEach(product => {
+                        const option = document.createElement('option');
+                        option.value = product.id;
+                        option.textContent = product.name;
+                        productSelect.appendChild(option);
+                    });
+                });
+
+            document.getElementById('product-select').addEventListener('change', function() {
+                const productId = this.value;
+                if (productId) {
+                    fetch(`get_product.php?id=${productId}`)
+                        .then(response => response.json())
+                        .then(product => {
+                            document.getElementById('product-name').value = product.name;
+                            document.getElementById('product-description').value = product.description;
+                            document.getElementById('product-price').value = product.price;
+                            document.getElementById('product-image').value = product.image;
+                        });
+                }
+            });
+
+            document.getElementById('product-form').addEventListener('submit', function(e) {
+                e.preventDefault();
+                const updatedProduct = {
+                    id: document.getElementById('product-select').value,
+                    name: document.getElementById('product-name').value,
+                    description: document.getElementById('product-description').value,
+                    price: document.getElementById('product-price').value,
+                    image: document.getElementById('product-image').value,
+                };
+
+                fetch('update_product.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(updatedProduct)
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('Product updated successfully!');
+                    } else {
+                        alert('Failed to update product.');
+                    }
+                });
+            });
         });
         /* --- END: UPDATED JAVASCRIPT --- */
     </script>
