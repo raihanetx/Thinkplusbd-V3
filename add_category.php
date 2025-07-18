@@ -10,11 +10,18 @@ $newCategoryHtml = '<div class="category" onclick="navigateTo(\'products\', \'' 
                     <p class="category-subtitle" id="category-count-' . strtolower($newCategory['name']) . '">0 ' . $newCategory['subtitle'] . '</p>
                 </div>';
 
-$indexContent = preg_replace(
-    '/(<section class="categories container">)/',
-    '$1' . $newCategoryHtml,
-    $indexContent
-);
+$dom = new DOMDocument();
+@$dom->loadHTML($indexContent);
+
+$xpath = new DOMXPath($dom);
+$section = $xpath->query('//section[contains(@class, "categories") and contains(@class, "container")]')->item(0);
+
+if ($section) {
+    $fragment = $dom->createDocumentFragment();
+    $fragment->appendXML($newCategoryHtml);
+    $section->appendChild($fragment);
+    $indexContent = $dom->saveHTML();
+}
 
 file_put_contents($indexFile, $indexContent);
 
