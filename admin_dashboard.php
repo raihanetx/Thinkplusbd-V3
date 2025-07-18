@@ -764,6 +764,7 @@ $current_total_pending_all_time = getCurrentTotalPendingOrders($all_site_orders_
                     if (data.success) {
                         alert('Category added successfully!');
                         document.getElementById('category-form').reset();
+                        fetchProductsForDropdown(); // Refresh the product list
                     } else {
                         alert('Failed to add category.');
                     }
@@ -774,18 +775,22 @@ $current_total_pending_all_time = getCurrentTotalPendingOrders($all_site_orders_
                 });
             });
 
-            // Fetch products for the dropdown
-            fetch('get_products.php')
-                .then(response => response.json())
-                .then(products => {
-                    const productSelect = document.getElementById('product-select');
-                    products.forEach(product => {
-                        const option = document.createElement('option');
-                        option.value = product.id;
-                        option.textContent = product.name;
-                        productSelect.appendChild(option);
+            function fetchProductsForDropdown() {
+                fetch('get_products.php')
+                    .then(response => response.json())
+                    .then(products => {
+                        const productSelect = document.getElementById('product-select');
+                        productSelect.innerHTML = '<option value="">Select a product to edit</option>';
+                        products.forEach(product => {
+                            const option = document.createElement('option');
+                            option.value = product.id;
+                            option.textContent = product.name;
+                            productSelect.appendChild(option);
+                        });
                     });
-                });
+            }
+
+            fetchProductsForDropdown();
 
             document.getElementById('product-select').addEventListener('change', function() {
                 const productId = this.value;
