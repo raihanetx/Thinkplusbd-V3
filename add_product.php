@@ -1,5 +1,5 @@
 <?php
-$updatedProduct = json_decode(file_get_contents('php://input'), true);
+$newProduct = json_decode(file_get_contents('php://input'), true);
 
 $indexFile = 'index.html';
 $indexContent = file_get_contents($indexFile);
@@ -8,16 +8,8 @@ preg_match('/(generateDemoProducts\(\) {\s*return\s*)(\[.*?\]);/s', $indexConten
 $productsJson = $matches[2];
 $products = json_decode(str_replace('`', '"', $productsJson), true);
 
-foreach ($products as &$p) {
-    if ($p['id'] == $updatedProduct['id']) {
-        $p['name'] = $updatedProduct['name'];
-        $p['description'] = $updatedProduct['description'];
-        $p['price'] = $updatedProduct['price'];
-        $p['image'] = $updatedProduct['image'];
-        $p['category'] = $updatedProduct['category'];
-        break;
-    }
-}
+$newProduct['id'] = uniqid();
+$products[] = $newProduct;
 
 $newProductsJson = json_encode($products, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
 $newProductsJson = str_replace('"', '`', $newProductsJson);
