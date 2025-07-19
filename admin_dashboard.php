@@ -514,9 +514,78 @@ $current_total_pending_all_time = getCurrentTotalPendingOrders($all_site_orders_
             .action-buttons-group form, .action-buttons-group .action-btn { width: 100%; }
             .action-buttons-group .action-btn { justify-content: center; }
         }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1001;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.4);
+        }
+
+        .modal-content {
+            background-color: #fefefe;
+            margin: 15% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%;
+            max-width: 500px;
+            border-radius: 10px;
+        }
+
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+        }
+
+        .close:hover,
+        .close:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
     </style>
 </head>
 <body>
+    <div id="add-product-modal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Add New Product</h2>
+            <form id="add-product-form">
+                <input type="text" id="new-product-name" placeholder="Product Name" required>
+                <textarea id="new-product-description" placeholder="Product Description" required></textarea>
+                <input type="number" id="new-product-price" placeholder="Product Price" required>
+                <input type="text" id="new-product-image" placeholder="Product Image URL" required>
+                <select id="new-product-category" required>
+                    <option value="">Select a category</option>
+                </select>
+                <button type="submit">Add Product</button>
+            </form>
+        </div>
+    </div>
+    <div id="edit-product-modal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Edit Product</h2>
+            <form id="edit-product-form">
+                <input type="hidden" id="edit-product-id">
+                <input type="text" id="edit-product-name" placeholder="Product Name" required>
+                <textarea id="edit-product-description" placeholder="Product Description" required></textarea>
+                <input type="number" id="edit-product-price" placeholder="Product Price" required>
+                <input type="text" id="edit-product-image" placeholder="Product Image URL" required>
+                <select id="edit-product-category" required>
+                    <option value="">Select a category</option>
+                </select>
+                <button type="submit">Update Product</button>
+            </form>
+        </div>
+    </div>
     <div class="admin-wrapper">
         <aside class="admin-sidebar" id="adminSidebar">
             <div class="logo-admin">
@@ -758,7 +827,7 @@ $current_total_pending_all_time = getCurrentTotalPendingOrders($all_site_orders_
                     if (data.success) {
                         alert('Category added successfully!');
                         document.getElementById('category-form').reset();
-                        fetchProductsForDropdown(); // Refresh the product list
+                        fetchAndDisplayProducts(); // Refresh the product list
                     } else {
                         alert('Failed to add category.');
                     }
@@ -776,47 +845,116 @@ $current_total_pending_all_time = getCurrentTotalPendingOrders($all_site_orders_
                         const productManagementArea = document.getElementById('product-management-area');
                         productManagementArea.innerHTML = '';
 
-                        // Group products by category
-                        const productsByCategory = data.products.reduce((acc, product) => {
-                            const category = product.category || 'Uncategorized';
-                            if (!acc[category]) {
-                                acc[category] = [];
+                        if (Array.isArray(data.products)) {
+                            // Group products by category
+                            const productsByCategory = data.products.reduce((acc, product) => {
+                                const category = product.category || 'Uncategorized';
+                                if (!acc[category]) {
+                                    acc[category] = [];
+                                }
+                                acc[category].push(product);
+                                return acc;
+                            }, {});
+
+                            for (const category in productsByCategory) {
+                                const categoryContainer = document.createElement('div');
+                                categoryContainer.innerHTML = `<h3>${category}</h3>`;
+                                const productsGrid = document.createElement('div');
+                                productsGrid.className = 'products-grid';
+
+                                productsByCategory[category].forEach(product => {
+                                    const productCard = document.createElement('div');
+                                    productCard.className = 'product-card';
+                                    productCard.innerHTML = `
+                                        <img src="${product.image}" alt="${product.name}">
+                                        <h4>${product.name}</h4>
+                                        <p>${product.description}</p>
+                                        <p>Price: ${product.price}</p>
+                                        <button onclick="editProduct('${product.id}')">Edit</button>
+                                        <button onclick="deleteProduct('${product.id}')">Delete</button>
+                                    `;
+                                    productsGrid.appendChild(productCard);
+                                });
+
+                                categoryContainer.appendChild(productsGrid);
+                                productManagementArea.appendChild(categoryContainer);
                             }
-                            acc[category].push(product);
-                            return acc;
-                        }, {});
-
-                        for (const category in productsByCategory) {
-                            const categoryContainer = document.createElement('div');
-                            categoryContainer.innerHTML = `<h3>${category}</h3>`;
-                            const productsGrid = document.createElement('div');
-                            productsGrid.className = 'products-grid';
-
-                            productsByCategory[category].forEach(product => {
-                                const productCard = document.createElement('div');
-                                productCard.className = 'product-card';
-                                productCard.innerHTML = `
-                                    <img src="${product.image}" alt="${product.name}">
-                                    <h4>${product.name}</h4>
-                                    <p>${product.description}</p>
-                                    <p>Price: ${product.price}</p>
-                                    <button onclick="editProduct('${product.id}')">Edit</button>
-                                    <button onclick="deleteProduct('${product.id}')">Delete</button>
-                                `;
-                                productsGrid.appendChild(productCard);
-                            });
-
-                            categoryContainer.appendChild(productsGrid);
-                            productManagementArea.appendChild(categoryContainer);
                         }
                     });
             }
 
             function editProduct(productId) {
-                // Implement edit functionality here.
-                // This could open a modal with a form to edit the product details.
-                alert(`Editing product ${productId}`);
+                const editProductModal = document.getElementById('edit-product-modal');
+                const closeBtn = document.querySelector('#edit-product-modal .close');
+
+                editProductModal.style.display = 'block';
+
+                fetch(`get_product.php?id=${productId}`)
+                    .then(response => response.json())
+                    .then(product => {
+                        document.getElementById('edit-product-id').value = product.id;
+                        document.getElementById('edit-product-name').value = product.name;
+                        document.getElementById('edit-product-description').value = product.description;
+                        document.getElementById('edit-product-price').value = product.price;
+                        document.getElementById('edit-product-image').value = product.image;
+
+                        fetch('get_products.php')
+                            .then(response => response.json())
+                            .then(data => {
+                                const categorySelect = document.getElementById('edit-product-category');
+                                categorySelect.innerHTML = '<option value="">Select a category</option>';
+                                if (Array.isArray(data.categories)) {
+                                    data.categories.forEach(category => {
+                                        const option = document.createElement('option');
+                                        option.value = category;
+                                        option.textContent = category;
+                                        if (category === product.category) {
+                                            option.selected = true;
+                                        }
+                                        categorySelect.appendChild(option);
+                                    });
+                                }
+                            });
+                    });
+
+                closeBtn.onclick = function() {
+                    editProductModal.style.display = 'none';
+                }
+
+                window.onclick = function(event) {
+                    if (event.target == editProductModal) {
+                        editProductModal.style.display = 'none';
+                    }
+                }
             }
+
+            document.getElementById('edit-product-form').addEventListener('submit', function(e) {
+                e.preventDefault();
+                const updatedProduct = {
+                    id: document.getElementById('edit-product-id').value,
+                    name: document.getElementById('edit-product-name').value,
+                    description: document.getElementById('edit-product-description').value,
+                    price: document.getElementById('edit-product-price').value,
+                    image: document.getElementById('edit-product-image').value,
+                    category: document.getElementById('edit-product-category').value,
+                };
+
+                fetch('update_product.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(updatedProduct)
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('Product updated successfully!');
+                        document.getElementById('edit-product-modal').style.display = 'none';
+                        fetchAndDisplayProducts();
+                    } else {
+                        alert('Failed to update product.');
+                    }
+                });
+            });
 
             function deleteProduct(productId) {
                 if (confirm('Are you sure you want to delete this product?')) {
@@ -835,10 +973,63 @@ $current_total_pending_all_time = getCurrentTotalPendingOrders($all_site_orders_
                 }
             }
 
-            document.getElementById('add-product-btn').addEventListener('click', function() {
-                // Implement add functionality here.
-                // This could open a modal with a form to add a new product.
-                alert('Adding a new product');
+            const addProductModal = document.getElementById('add-product-modal');
+            const addProductBtn = document.getElementById('add-product-btn');
+            const closeBtn = document.querySelector('#add-product-modal .close');
+
+            addProductBtn.onclick = function() {
+                addProductModal.style.display = 'block';
+                fetch('get_products.php')
+                    .then(response => response.json())
+                    .then(data => {
+                        const categorySelect = document.getElementById('new-product-category');
+                        categorySelect.innerHTML = '<option value="">Select a category</option>';
+                        if (Array.isArray(data.categories)) {
+                            data.categories.forEach(category => {
+                                const option = document.createElement('option');
+                                option.value = category;
+                                option.textContent = category;
+                                categorySelect.appendChild(option);
+                            });
+                        }
+                    });
+            }
+
+            closeBtn.onclick = function() {
+                addProductModal.style.display = 'none';
+            }
+
+            window.onclick = function(event) {
+                if (event.target == addProductModal) {
+                    addProductModal.style.display = 'none';
+                }
+            }
+
+            document.getElementById('add-product-form').addEventListener('submit', function(e) {
+                e.preventDefault();
+                const newProduct = {
+                    name: document.getElementById('new-product-name').value,
+                    description: document.getElementById('new-product-description').value,
+                    price: document.getElementById('new-product-price').value,
+                    image: document.getElementById('new-product-image').value,
+                    category: document.getElementById('new-product-category').value,
+                };
+
+                fetch('add_product.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(newProduct)
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('Product added successfully!');
+                        addProductModal.style.display = 'none';
+                        fetchAndDisplayProducts();
+                    } else {
+                        alert('Failed to add product.');
+                    }
+                });
             });
 
             fetchAndDisplayProducts();
