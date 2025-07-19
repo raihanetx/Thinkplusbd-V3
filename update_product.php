@@ -8,14 +8,18 @@ preg_match('/(generateDemoProducts\(\) {\s*return\s*)(\[.*?\]);/s', $indexConten
 $productsJson = $matches[2];
 $products = json_decode(str_replace('`', '"', $productsJson), true);
 
-foreach ($products as &$p) {
-    if ($p['id'] == $updatedProduct['id']) {
-        $p['name'] = $updatedProduct['name'];
-        $p['description'] = $updatedProduct['description'];
-        $p['price'] = $updatedProduct['price'];
-        $p['image'] = $updatedProduct['image'];
-        $p['category'] = $updatedProduct['category'];
-        break;
+if (is_array($products)) {
+    foreach ($products as &$p) {
+        if (isset($p['id']) && isset($updatedProduct['id']) && $p['id'] == $updatedProduct['id']) {
+            $p['name'] = $updatedProduct['name'];
+            $p['description'] = $updatedProduct['description'];
+            $p['price'] = $updatedProduct['price'];
+            $p['image'] = $updatedProduct['image'];
+            if (isset($updatedProduct['category'])) {
+                $p['category'] = $updatedProduct['category'];
+            }
+            break;
+        }
     }
 }
 

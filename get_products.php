@@ -13,8 +13,10 @@ $categoryElements = $xpath->query('//div[contains(@class, "category")]');
 
 $categories = [];
 foreach ($categoryElements as $element) {
-    $name = $xpath->query('.//p[contains(@class, "category-name")]', $element)->item(0)->nodeValue;
-    $categories[] = $name;
+    $category = $element->getAttribute('data-category');
+    if (!empty($category)) {
+        $categories[] = $category;
+    }
 }
 
 echo json_encode(['products' => $products, 'categories' => $categories]);
