@@ -870,8 +870,8 @@ $current_total_pending_all_time = getCurrentTotalPendingOrders($all_site_orders_
                                         <h4>${product.name}</h4>
                                         <p>${product.description}</p>
                                         <p>Price: ${product.price}</p>
-                                        <button onclick="editProduct('${product.id}')">Edit</button>
-                                        <button onclick="deleteProduct('${product.id}')">Delete</button>
+                                        <button class="edit-product-btn" data-id="${product.id}">Edit</button>
+                                        <button class="delete-product-btn" data-id="${product.id}">Delete</button>
                                     `;
                                     productsGrid.appendChild(productCard);
                                 });
@@ -882,6 +882,17 @@ $current_total_pending_all_time = getCurrentTotalPendingOrders($all_site_orders_
                         }
                     });
             }
+
+            document.addEventListener('click', function(e) {
+                if (e.target.classList.contains('edit-product-btn')) {
+                    const productId = e.target.dataset.id;
+                    editProduct(productId);
+                }
+                if (e.target.classList.contains('delete-product-btn')) {
+                    const productId = e.target.dataset.id;
+                    deleteProduct(productId);
+                }
+            });
 
             function editProduct(productId) {
                 const editProductModal = document.getElementById('edit-product-modal');
