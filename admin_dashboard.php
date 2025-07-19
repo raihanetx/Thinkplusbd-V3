@@ -639,7 +639,7 @@ $current_total_pending_all_time = getCurrentTotalPendingOrders($all_site_orders_
                         <input type="text" id="category-name" placeholder="Category Name" required>
                         <input type="text" id="category-icon" placeholder="Font Awesome Icon (e.g., fas fa-book)" required>
                         <input type="text" id="category-subtitle" placeholder="Subtitle" required>
-                        <button type_submit>Add Category</button>
+                        <button type="submit">Add Category</button>
                     </form>
                 </div>
 

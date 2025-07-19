@@ -4,7 +4,7 @@ $newCategory = json_decode(file_get_contents('php://input'), true);
 $indexFile = 'index.html';
 $indexContent = file_get_contents($indexFile);
 
-$newCategoryHtml = '<div class="category" onclick="navigateTo(\'products\', \'' . strtolower($newCategory['name']) . '\')">
+$newCategoryHtml = '<div class="category" data-category="' . strtolower($newCategory['name']) . '" onclick="navigateTo(\'products\', \'' . strtolower($newCategory['name']) . '\')">
                     <div class="category-icon-wrapper"><i class="' . $newCategory['icon'] . ' category-icon-fa" aria-hidden="true"></i></div>
                     <p class="category-name">' . $newCategory['name'] . '</p>
                     <p class="category-subtitle" id="category-count-' . strtolower($newCategory['name']) . '">0 ' . $newCategory['subtitle'] . '</p>
@@ -40,6 +40,28 @@ if ($section) {
 
     $indexContent = $dom->saveHTML();
 }
+
+// Add the new category to the generateDemoProducts function
+preg_match('/(generateDemoProducts\(\) {\s*return\s*)(\[.*?\]);/s', $indexContent, $matches);
+$productsJson = $matches[2];
+$products = json_decode(str_replace('`', '"', $productsJson), true);
+
+$newProduct = [
+    'id' => uniqid(),
+    'name' => 'New Product in ' . $newCategory['name'],
+    'description' => 'Description for new product in ' . $newCategory['name'],
+    'price' => 0,
+    'image' => 'path/to/default-product-image.jpg',
+    'category' => strtolower($newCategory['name']),
+    'isFeatured' => false
+];
+$products[] = $newProduct;
+
+$newProductsJson = json_encode($products, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+$newProductsJson = str_replace('"', '`', $newProductsJson);
+
+$newContent = $matches[1] . $newProductsJson . ';';
+$indexContent = str_replace($matches[0], $newContent, $indexContent);
 
 file_put_contents($indexFile, $indexContent);
 
