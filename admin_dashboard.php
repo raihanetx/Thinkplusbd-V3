@@ -575,17 +575,11 @@ $current_total_pending_all_time = getCurrentTotalPendingOrders($all_site_orders_
                 </div>
 
                 <div class="content-card">
-                    <h2 class="card-title">Edit Product</h2>
-                    <form id="product-form">
-                        <select id="product-select" required>
-                            <option value="">Select a product to edit</option>
-                        </select>
-                        <input type="text" id="product-name" placeholder="Product Name" required>
-                        <textarea id="product-description" placeholder="Product Description" required></textarea>
-                        <input type="number" id="product-price" placeholder="Product Price" required>
-                        <input type="text" id="product-image" placeholder="Product Image URL" required>
-                        <button type="submit">Update Product</button>
-                    </form>
+                    <h2 class="card-title">Manage Products</h2>
+                    <div id="product-management-area">
+                        <!-- Product cards will be loaded here -->
+                    </div>
+                    <button id="add-product-btn">Add New Product</button>
                 </div>
 
                 <div class="content-card">
@@ -775,61 +769,79 @@ $current_total_pending_all_time = getCurrentTotalPendingOrders($all_site_orders_
                 });
             });
 
-            function fetchProductsForDropdown() {
+            function fetchAndDisplayProducts() {
                 fetch('get_products.php')
                     .then(response => response.json())
-                    .then(products => {
-                        const productSelect = document.getElementById('product-select');
-                        productSelect.innerHTML = '<option value="">Select a product to edit</option>';
-                        products.forEach(product => {
-                            const option = document.createElement('option');
-                            option.value = product.id;
-                            option.textContent = product.name;
-                            productSelect.appendChild(option);
-                        });
+                    .then(data => {
+                        const productManagementArea = document.getElementById('product-management-area');
+                        productManagementArea.innerHTML = '';
+
+                        // Group products by category
+                        const productsByCategory = data.products.reduce((acc, product) => {
+                            const category = product.category || 'Uncategorized';
+                            if (!acc[category]) {
+                                acc[category] = [];
+                            }
+                            acc[category].push(product);
+                            return acc;
+                        }, {});
+
+                        for (const category in productsByCategory) {
+                            const categoryContainer = document.createElement('div');
+                            categoryContainer.innerHTML = `<h3>${category}</h3>`;
+                            const productsGrid = document.createElement('div');
+                            productsGrid.className = 'products-grid';
+
+                            productsByCategory[category].forEach(product => {
+                                const productCard = document.createElement('div');
+                                productCard.className = 'product-card';
+                                productCard.innerHTML = `
+                                    <img src="${product.image}" alt="${product.name}">
+                                    <h4>${product.name}</h4>
+                                    <p>${product.description}</p>
+                                    <p>Price: ${product.price}</p>
+                                    <button onclick="editProduct('${product.id}')">Edit</button>
+                                    <button onclick="deleteProduct('${product.id}')">Delete</button>
+                                `;
+                                productsGrid.appendChild(productCard);
+                            });
+
+                            categoryContainer.appendChild(productsGrid);
+                            productManagementArea.appendChild(categoryContainer);
+                        }
                     });
             }
 
-            fetchProductsForDropdown();
+            function editProduct(productId) {
+                // Implement edit functionality here.
+                // This could open a modal with a form to edit the product details.
+                alert(`Editing product ${productId}`);
+            }
 
-            document.getElementById('product-select').addEventListener('change', function() {
-                const productId = this.value;
-                if (productId) {
-                    fetch(`get_product.php?id=${productId}`)
-                        .then(response => response.json())
-                        .then(product => {
-                            document.getElementById('product-name').value = product.name;
-                            document.getElementById('product-description').value = product.description;
-                            document.getElementById('product-price').value = product.price;
-                            document.getElementById('product-image').value = product.image;
-                        });
+            function deleteProduct(productId) {
+                if (confirm('Are you sure you want to delete this product?')) {
+                    fetch(`delete_product.php?id=${productId}`, {
+                        method: 'DELETE'
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            alert('Product deleted successfully!');
+                            fetchAndDisplayProducts();
+                        } else {
+                            alert('Failed to delete product.');
+                        }
+                    });
                 }
+            }
+
+            document.getElementById('add-product-btn').addEventListener('click', function() {
+                // Implement add functionality here.
+                // This could open a modal with a form to add a new product.
+                alert('Adding a new product');
             });
 
-            document.getElementById('product-form').addEventListener('submit', function(e) {
-                e.preventDefault();
-                const updatedProduct = {
-                    id: document.getElementById('product-select').value,
-                    name: document.getElementById('product-name').value,
-                    description: document.getElementById('product-description').value,
-                    price: document.getElementById('product-price').value,
-                    image: document.getElementById('product-image').value,
-                };
-
-                fetch('update_product.php', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(updatedProduct)
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        alert('Product updated successfully!');
-                    } else {
-                        alert('Failed to update product.');
-                    }
-                });
-            });
+            fetchAndDisplayProducts();
         });
         /* --- END: UPDATED JAVASCRIPT --- */
     </script>
