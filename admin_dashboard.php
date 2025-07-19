@@ -958,9 +958,7 @@ $current_total_pending_all_time = getCurrentTotalPendingOrders($all_site_orders_
 
             function deleteProduct(productId) {
                 if (confirm('Are you sure you want to delete this product?')) {
-                    fetch(`delete_product.php?id=${productId}`, {
-                        method: 'DELETE'
-                    })
+                    fetch(`delete_product.php?id=${productId}`)
                     .then(response => response.json())
                     .then(data => {
                         if (data.success) {
